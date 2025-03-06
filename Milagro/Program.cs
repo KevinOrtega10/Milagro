@@ -15,7 +15,6 @@ namespace Milagro
             // see https://aka.ms/applicationconfiguration.
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            ApplicationConfiguration.Initialize();
             Application.Run(new MainForm());
         }
     }

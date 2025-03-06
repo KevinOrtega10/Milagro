@@ -15,6 +15,7 @@ namespace Milagro
         {
             return new SqlConnection(connectionString);
         }
+        public string GetConnectionString() => connectionString;
 
         public void ProbarConexion()
         {

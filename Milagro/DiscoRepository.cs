@@ -1,65 +1,61 @@
-﻿using System;
+﻿using Microsoft.Data.SqlClient;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
+using System.Data;
 
 namespace Milagro
 {
     internal class DiscoRepository : IDiscoRepository
     {
         private Conexion conexion = new Conexion();
+        private readonly string connectionstring;
+
+        public DiscoRepository()
+        {
+            var conexion = new Conexion();
+            connectionstring = conexion.GetConnectionString();
+        }
 
         public void InsertarDisco(Disco disco)
         {
-            using (var con = conexion.ObtenerConexion())
-            {
-                con.Open();
-                var query = "INSERT INTO Discos (Nombre, Artista, Genero, ANO, Precio) VALUES (@Nombre, @Artista, @Genero, @ANO, @Precio)";
-                using (var cmd = new SqlCommand(query, con))
-                {
-                    cmd.Parameters.AddWithValue("@Nombre", disco.Nombre);
-                    cmd.Parameters.AddWithValue("@Artista", disco.Artista);
-                    cmd.Parameters.AddWithValue("@Genero", disco.Genero);
-                    cmd.Parameters.AddWithValue("@ANO", disco.ANO);
-                    cmd.Parameters.AddWithValue("@Precio", disco.Precio);
-                    cmd.ExecuteNonQuery();
-                }
-            }
+            using var conexion = new SqlConnection(connectionstring);
+            conexion.Open();
+            using var comando = new SqlCommand("InsertarDisco", conexion);
+            comando.CommandType = CommandType.StoredProcedure;
+            comando.Parameters.AddWithValue("@Titulo", disco.Nombre);
+            comando.Parameters.AddWithValue("@Artista", disco.Artista);
+            comando.Parameters.AddWithValue("@Genero", disco.Genero);
+            comando.Parameters.AddWithValue("@ANo", disco.ANO);
+            comando.Parameters.AddWithValue("@Precio", disco.Precio);
+
+            comando.ExecuteNonQuery();
         }
 
         public void ActualizarDisco(Disco disco)
         {
-            using (var con = conexion.ObtenerConexion())
-            {
-                con.Open();
-                var query = "UPDATE Discos SET Nombre=@Nombre, Artista=@Artista, Genero=@Genero, ANO=@ANO, Precio=@Precio WHERE Id=@Id";
-                using (var cmd = new SqlCommand(query, con))
-                {
-                    cmd.Parameters.AddWithValue("@Id", disco.Id);
-                    cmd.Parameters.AddWithValue("@Nombre", disco.Nombre);
-                    cmd.Parameters.AddWithValue("@Artista", disco.Artista);
-                    cmd.Parameters.AddWithValue("@Genero", disco.Genero);
-                    cmd.Parameters.AddWithValue("@ANO", disco.ANO);
-                    cmd.Parameters.AddWithValue("@Precio", disco.Precio);
-                    cmd.ExecuteNonQuery();
-                }
-            }
+            using var conexion = new SqlConnection(connectionstring);
+            conexion.Open();
+            using var comando = new SqlCommand("ActualizarDisco", conexion);
+            comando.CommandType = CommandType.StoredProcedure;
+            comando.Parameters.AddWithValue("@DiscoID", disco.Id);
+            comando.Parameters.AddWithValue("@Titulo", disco.Nombre);
+            comando.Parameters.AddWithValue("@Artista", disco.Artista);
+            comando.Parameters.AddWithValue("@Genero", disco.Genero);
+            comando.Parameters.AddWithValue("@ANo", disco.ANO);
+            comando.Parameters.AddWithValue("@Precio", disco.Precio);
+
+            comando.ExecuteNonQuery();
         }
 
         public void EliminarDisco(int id)
         {
-            using (var con = conexion.ObtenerConexion())
-            {
-                con.Open();
-                var query = "DELETE FROM Discos WHERE Id=@Id";
-                using (var cmd = new SqlCommand(query, con))
-                {
-                    cmd.Parameters.AddWithValue("@Id", id);
-                    cmd.ExecuteNonQuery();
-                }
-            }
+            using var conexion = new SqlConnection(connectionstring);
+            conexion.Open();
+            using var comando = new SqlCommand("BorrarDisco", conexion);
+            comando.CommandType = CommandType.StoredProcedure;
+            comando.Parameters.AddWithValue("@DiscoID", id);
+
+            comando.ExecuteNonQuery();
         }
 
         public List<Disco> ObtenerDisco()
@@ -69,22 +65,20 @@ namespace Milagro
             using (var con = conexion.ObtenerConexion())
             {
                 con.Open();
-                var query = "SELECT * FROM Discos";
-                using (var cmd = new SqlCommand(query, con))
-                using (var reader = cmd.ExecuteReader())
+                using var cmd = new SqlCommand("ObtenerDDiscos", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
                 {
-                    while (reader.Read())
+                    discos.Add(new Disco
                     {
-                        discos.Add(new Disco
-                        {
-                            Id = reader.GetInt32(0),
-                            Nombre = reader.GetString(1),
-                            Artista = reader.GetString(2),
-                            Genero = reader.GetString(3),
-                            ANO = reader.GetInt32(4),
-                            Precio = reader.GetDecimal(5)
-                        });
-                    }
+                        Id = reader.GetInt32(0),
+                        Nombre = reader.GetString(1),
+                        Artista = reader.GetString(2),
+                        Genero = reader.GetString(3),
+                        ANO = reader.GetInt32(4),
+                        Precio = reader.GetDecimal(5)
+                    });
                 }
             }
             return discos;
